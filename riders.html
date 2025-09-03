@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rider Dashboard - MotoFleet</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+  <div class="container py-4">
+    <h2 class="mb-4 text-center">🏍 Rider Dashboard</h2>
+
+    <h4 class="mb-3">Available Rides</h4>
+    <div id="rides" class="row g-3 mb-4"></div>
+
+    <div class="card shadow-sm p-3 mb-4">
+      <h5>Place a Bid</h5>
+      <form id="bidForm">
+        <div class="mb-3">
+          <label class="form-label">Ride ID</label>
+          <input type="number" id="rideId" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Bid Amount (₱)</label>
+          <input type="number" id="amount" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Your Location</label>
+          <input type="text" id="location" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-success w-100">Submit Bid</button>
+      </form>
+    </div>
+
+    <div class="card shadow-sm p-3">
+      <h5>Close a Ride</h5>
+      <form id="closeForm">
+        <div class="mb-3">
+          <label class="form-label">Ride ID</label>
+          <input type="number" id="closeRideId" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-danger w-100">Close Ride</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    loadRides();
+    bidForm.addEventListener('submit', e => {
+      e.preventDefault();
+      addBid(rideId.value, amount.value, location.value);
+    });
+    closeForm.addEventListener('submit', e => {
+      e.preventDefault();
+      closeRide(closeRideId.value);
+    });
+  </script>
+</body>
+</html>
