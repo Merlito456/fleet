@@ -8,7 +8,10 @@
 </head>
 <body class="bg-light">
   <div class="container py-4">
-    <h2 class="mb-4 text-center">🚖 Request a Ride</h2>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2 class="mb-0">🚖 Request a Ride</h2>
+      <button class="btn btn-outline-danger btn-sm" id="logoutBtn">Logout</button>
+    </div>
 
     <div class="card shadow-sm p-3 mb-4">
       <form id="rideForm">
@@ -34,11 +37,30 @@
 
   <script src="script.js"></script>
   <script>
-    loadRides();
+    // 🔒 Enforce login
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user) {
+      window.location.href = "login.html"; // redirect if not logged in
+    } else if (user.role !== "user") {
+      // Redirect based on role
+      if (user.role === "rider") window.location.href = "rider.html";
+      if (user.role === "admin") window.location.href = "admin.html";
+    }
+
+    // 🚪 Logout
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      localStorage.removeItem("user");
+      window.location.href = "login.html";
+    });
+
+    // 🚖 Submit ride
     document.getElementById('rideForm').addEventListener('submit', function(e) {
       e.preventDefault();
       addRide(origin.value, destination.value, remarks.value);
     });
+
+    // 📋 Load rides
+    loadRides();
   </script>
 </body>
 </html>
