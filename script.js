@@ -49,6 +49,17 @@ function currentUser(){
   try { return JSON.parse(localStorage.getItem("user") || "null"); }
   catch(e){ return null; }
 }
+function hireRider(ride_id, rider_id) {
+  fetch(API_URL + "hireRider.php", {
+    method: "POST",
+    body: new URLSearchParams({ ride_id, rider_id })
+  })
+  .then(res => res.json())
+  .then(data => {
+    alert(data.message);
+    loadRides(); // refresh ride list
+  });
+}
 
 async function requireRole(role, redirect = "login.html"){
   const u = await me();
