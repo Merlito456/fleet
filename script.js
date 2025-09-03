@@ -16,21 +16,37 @@ const get = (path) =>
 // ---------------- AUTH ----------------
 async function register(name, email, phone, password, role){
   const res = await post("auth_register.php", { name, email, phone, password, role });
-  if (!res.success && !res.user) { alert(res.message || "Registration failed"); return false; }
+  if (!res.success || !res.user) { 
+    alert(res.message || "Registration failed"); 
+    return false; 
+  }
   localStorage.setItem("user", JSON.stringify(res.user));
   return true;
 }
 
 async function login(email, password){
   const res = await post("auth_login.php", { email, password });
-  if (!res.success && !res.user) { alert(res.message || "Login failed"); return false; }
+  if (!res.success || !res.user) { 
+    alert(res.message || "Login failed"); 
+    return false; 
+  }
   localStorage.setItem("user", JSON.stringify(res.user));
   return true;
+}
+
+// 🚦 Redirect by role
+function redirectByRole() {
+  const u = currentUser();
+  if (!u) { location.href = "login.html"; return; }
+  if (u.role === "user")  location.href = "index.html";
+  if (u.role === "rider") location.href = "riders.html";
+  if (u.role === "admin") location.href = "admin.html";
 }
 
 async function logout(){
   try { await post("auth_logout.php", {}); } catch(e){}
   localStorage.removeItem("user");
+  location.href = "login.html";
 }
 
 async function me(){
@@ -49,17 +65,6 @@ function currentUser(){
   try { return JSON.parse(localStorage.getItem("user") || "null"); }
   catch(e){ return null; }
 }
-function hireRider(ride_id, rider_id) {
-  fetch(API_URL + "hireRider.php", {
-    method: "POST",
-    body: new URLSearchParams({ ride_id, rider_id })
-  })
-  .then(res => res.json())
-  .then(data => {
-    alert(data.message);
-    loadRides(); // refresh ride list
-  });
-}
 
 async function requireRole(role, redirect = "login.html"){
   const u = await me();
@@ -70,19 +75,11 @@ async function requireRole(role, redirect = "login.html"){
   return true;
 }
 
-function redirectByRole(){
-  const u = currentUser();
-  if (!u) { location.href = 'login.html'; return; }
-  if (u.role === 'user')  location.href = 'index.html';
-  if (u.role === 'rider') location.href = 'riders.html';
-  if (u.role === 'admin') location.href = 'admin.html';
-}
-
 // --------------- USER FLOWS ---------------
 function addRide(origin, destination, remarks) {
   post("addRide.php", { origin, destination, remarks })
     .then(data => {
-      alert(data.message || 'OK');
+      alert(data.message || "OK");
       loadRides();
     });
 }
@@ -96,8 +93,8 @@ function loadRides() {
           <div class="card shadow-sm p-3 rounded-3">
             <h5 class="mb-1">Ride #${r.id}</h5>
             <p class="mb-1"><strong>${r.origin}</strong> → <strong>${r.destination}</strong></p>
-            <p class="text-muted small">${r.remarks || ''}</p>
-            <span class="badge bg-${r.status === 'open' ? 'warning' : (r.status === 'hired' ? 'info' : 'success')}">
+            <p class="text-muted small">${r.remarks || ""}</p>
+            <span class="badge bg-${r.status === "open" ? "warning" : (r.status === "hired" ? "info" : "success")}">
               ${r.status}
             </span>
           </div>
@@ -108,14 +105,22 @@ function loadRides() {
 }
 
 // --------------- RIDER FLOWS ---------------
+function hireRider(ride_id, rider_id) {
+  post("hireRider.php", { ride_id, rider_id })
+    .then(data => {
+      alert(data.message);
+      loadRides();
+    });
+}
+
 function addBid(ride_id, amount, location) {
   post("addBid.php", { ride_id, amount, location })
-    .then(data => alert(data.message || 'OK'));
+    .then(data => alert(data.message || "OK"));
 }
 
 function closeRide(ride_id) {
   post("closeRide.php", { ride_id })
-    .then(data => alert(data.message || 'OK'));
+    .then(data => alert(data.message || "OK"));
 }
 
 // --------------- ADMIN/REPORTS ---------------
