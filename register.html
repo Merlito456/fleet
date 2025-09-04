@@ -11,10 +11,22 @@
     <h2 class="text-center mb-4">Create Account</h2>
     <div class="card p-3 shadow-sm mx-auto" style="max-width:500px">
       <form id="regForm">
-        <div class="mb-3"><label class="form-label">Full Name</label><input id="name" class="form-control" required></div>
-        <div class="mb-3"><label class="form-label">Phone</label><input id="phone" class="form-control"></div>
-        <div class="mb-3"><label class="form-label">Email</label><input id="email" type="email" class="form-control" required></div>
-        <div class="mb-3"><label class="form-label">Password</label><input id="password" type="password" class="form-control" required></div>
+        <div class="mb-3">
+          <label class="form-label">Full Name</label>
+          <input id="name" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Phone</label>
+          <input id="phone" class="form-control">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Email</label>
+          <input id="email" type="email" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Password</label>
+          <input id="password" type="password" class="form-control" required>
+        </div>
         <div class="mb-3">
           <label class="form-label">Role</label>
           <select id="role" class="form-select">
@@ -22,19 +34,72 @@
             <option value="rider">Rider (bid & deliver)</option>
           </select>
         </div>
-        <button class="btn btn-success w-100">Register</button>
+        <button type="submit" class="btn btn-success w-100">Register</button>
       </form>
       <div class="mt-3 text-center">
         <a href="login.html">Already have an account?</a>
       </div>
     </div>
   </div>
-  <script src="script.js"></script>
-  <script>
-    document.getElementById('regForm').addEventListener('submit', async (e)=>{
+
+  <!-- Firebase Module Script -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-app.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
+    import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDlLV0mC6SoU061JNJanMX_7CMJ6dj9jFs",
+      authDomain: "fleet-acd5e.firebaseapp.com",
+      projectId: "fleet-acd5e",
+      storageBucket: "fleet-acd5e.firebasestorage.app",
+      messagingSenderId: "29073738872",
+      appId: "1:29073738872:web:c944b84447a6d36e80f18d"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    // Register function
+    export async function register(name, email, phone, password, role) {
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        // Save user info to Firestore
+        await addDoc(collection(db, "users"), {
+          uid: user.uid,
+          name,
+          email,
+          phone,
+          role
+        });
+        console.log("Registered user:", user.uid);
+        return user;
+      } catch (err) {
+        alert(err.message);
+        return null;
+      }
+    }
+
+    // Redirect placeholder
+    window.redirectByRole = function() {
+      // Replace with your logic to redirect based on role
+      window.location.href = "dashboard.html";
+    };
+
+    // Handle form submission
+    const regForm = document.getElementById('regForm');
+    regForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const ok = await register(name.value, email.value, phone.value, password.value, role.value);
-      if (ok) redirectByRole();
+      const name = document.getElementById('name').value;
+      const phone = document.getElementById('phone').value;
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const role = document.getElementById('role').value;
+
+      const user = await register(name, email, phone, password, role);
+      if (user) redirectByRole();
     });
   </script>
 </body>
