@@ -3,15 +3,35 @@ const API_URL = "https://fleet.zya.me/";
 
 // Helpers
 const qs = (o) => new URLSearchParams(o);
+
 const post = (path, data) =>
   fetch(API_URL + path, {
     method: "POST",
     credentials: "include",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: qs(data),
-  }).then(r => r.json());
+  })
+  .then(async r => {
+    const text = await r.text();
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      console.error("❌ POST response was not JSON:", path, text);
+      return { success: false, message: "Server did not return JSON" };
+    }
+  });
 
 const get = (path) =>
-  fetch(API_URL + path, { credentials: "include" }).then(r => r.json());
+  fetch(API_URL + path, { credentials: "include" })
+  .then(async r => {
+    const text = await r.text();
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      console.error("❌ GET response was not JSON:", path, text);
+      return { success: false, message: "Server did not return JSON" };
+    }
+  });
 
 // ---------------- AUTH ----------------
 async function register(name, email, phone, password, role){
