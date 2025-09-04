@@ -33,25 +33,73 @@ const get = (path) =>
     }
   });
 
-// ---------------- AUTH ----------------
+// ---------------- FIREBASE AUTH ----------------
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-auth.js";
+
+// Firebase Config
+const firebaseConfig = {
+  apiKey: "AIzaSyDlLV0mC6SoU061JNJanMX_7CMJ6dj9jFs",
+  authDomain: "fleet-acd5e.firebaseapp.com",
+  projectId: "fleet-acd5e",
+  storageBucket: "fleet-acd5e.firebasestorage.app",
+  messagingSenderId: "29073738872",
+  appId: "1:29073738872:web:c944b84447a6d36e80f18d"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+// Register with Firebase + Firestore
 async function register(name, email, phone, password, role){
-  const res = await post("auth_register.php", { name, email, phone, password, role });
-  if (!res.success || !res.user) { 
-    alert(res.message || "Registration failed"); 
-    return false; 
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+
+    // Save to Firestore
+    await addDoc(collection(db, "users"), { uid: user.uid, name, email, phone, role });
+
+    localStorage.setItem("user", JSON.stringify({ uid: user.uid, name, email, phone, role }));
+    return true;
+  } catch (err) {
+    alert(err.message);
+    return false;
   }
-  localStorage.setItem("user", JSON.stringify(res.user));
-  return true;
 }
 
+// Login with Firebase + Firestore
 async function login(email, password){
-  const res = await post("auth_login.php", { email, password });
-  if (!res.success || !res.user) { 
-    alert(res.message || "Login failed"); 
-    return false; 
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+
+    // Get role & profile from Firestore
+    const q = query(collection(db, "users"), where("uid", "==", user.uid));
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      const profile = snap.docs[0].data();
+      localStorage.setItem("user", JSON.stringify(profile));
+    }
+
+    return true;
+  } catch (err) {
+    alert(err.message);
+    return false;
   }
-  localStorage.setItem("user", JSON.stringify(res.user));
-  return true;
+}
+
+// Logout
+async function logout(){
+  try { await signOut(auth); } catch(e){}
+  localStorage.removeItem("user");
+  location.href = "login.html";
+}
+
+function currentUser(){
+  try { return JSON.parse(localStorage.getItem("user") || "null"); }
+  catch(e){ return null; }
 }
 
 // 🚦 Redirect by role
@@ -63,39 +111,7 @@ function redirectByRole() {
   if (u.role === "admin") location.href = "admin.html";
 }
 
-async function logout(){
-  try { await post("auth_logout.php", {}); } catch(e){}
-  localStorage.removeItem("user");
-  location.href = "login.html";
-}
-
-async function me(){
-  try {
-    const res = await get("auth_me.php");
-    if (res.user) {
-      localStorage.setItem("user", JSON.stringify(res.user));
-      return res.user;
-    }
-  } catch(e){}
-  localStorage.removeItem("user");
-  return null;
-}
-
-function currentUser(){
-  try { return JSON.parse(localStorage.getItem("user") || "null"); }
-  catch(e){ return null; }
-}
-
-async function requireRole(role, redirect = "login.html"){
-  const u = await me();
-  if (!u || u.role !== role) {
-    location.href = redirect;
-    return false;
-  }
-  return true;
-}
-
-// --------------- USER FLOWS ---------------
+// ---------------- EXISTING APP FLOWS (rides, bids, admin) ----------------
 function addRide(origin, destination, remarks) {
   post("addRide.php", { origin, destination, remarks })
     .then(data => {
@@ -124,7 +140,6 @@ function loadRides() {
   });
 }
 
-// --------------- RIDER FLOWS ---------------
 function hireRider(ride_id, rider_id) {
   post("hireRider.php", { ride_id, rider_id })
     .then(data => {
@@ -143,7 +158,6 @@ function closeRide(ride_id) {
     .then(data => alert(data.message || "OK"));
 }
 
-// --------------- ADMIN/REPORTS ---------------
 function loadCommissions() {
   get("getCommissions.php").then(data => {
     let html = "";
