@@ -1,10 +1,19 @@
 <script type="module">
 import { db, auth } from './firebaseConfig.js';
-import { collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
+import { collection, addDoc } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
 import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-auth.js";
 
-// Register function
+// Register function with input validation
 async function register(name, email, phone, password, role){
+  if (!name || !email || !password) {
+    alert("Name, Email, and Password are required!");
+    return;
+  }
+  if (password.length < 6) {
+    alert("Password should be at least 6 characters.");
+    return;
+  }
+
   try {
     // 1. Create user in Firebase Auth
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -20,20 +29,25 @@ async function register(name, email, phone, password, role){
       createdAt: new Date()
     });
 
-    localStorage.setItem("user", JSON.stringify({ uid: user.uid, name, email, phone, role }));
+    // Save profile locally
+    const profile = { uid: user.uid, name, email, phone, role };
+    localStorage.setItem("user", JSON.stringify(profile));
+
     alert("Registration successful!");
     window.location.href = "index.html"; // redirect after register
   } catch(err) {
-    alert(err.message);
+    // Show clear error messages
+    console.error(err);
+    alert(err.message || "Registration failed.");
   }
 }
 
 // Form submission
 document.getElementById('regForm').addEventListener('submit', async (e)=>{
   e.preventDefault();
-  const name = document.getElementById('name').value;
-  const phone = document.getElementById('phone').value;
-  const email = document.getElementById('email').value;
+  const name = document.getElementById('name').value.trim();
+  const phone = document.getElementById('phone').value.trim();
+  const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
   const role = document.getElementById('role').value;
   await register(name, email, phone, password, role);
