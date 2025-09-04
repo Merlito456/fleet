@@ -3,8 +3,16 @@ import { db, auth } from './firebaseConfig.js';
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
 import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-auth.js";
 
-// Login function
+// Login function with validation
 async function login(email, password){
+  email = email.trim();
+  password = password.trim();
+
+  if (!email || !password) {
+    alert("Email and Password are required!");
+    return null;
+  }
+
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
@@ -12,24 +20,30 @@ async function login(email, password){
     // Get user profile from Firestore
     const q = query(collection(db, "users"), where("uid", "==", user.uid));
     const snap = await getDocs(q);
+
     if (!snap.empty) {
       const profile = snap.docs[0].data();
       localStorage.setItem("user", JSON.stringify(profile));
       alert("Login successful!");
       redirectByRole(profile.role);
+      return profile;
     } else {
       alert("No profile found in Firestore.");
+      return null;
     }
   } catch(err) {
-    alert(err.message);
+    console.error(err);
+    alert(err.message || "Login failed");
+    return null;
   }
 }
 
 // Redirect based on role
 function redirectByRole(role){
   if(role === "user") window.location.href = "index.html";
-  if(role === "rider") window.location.href = "riders.html";
-  if(role === "admin") window.location.href = "admin.html";
+  else if(role === "rider") window.location.href = "riders.html";
+  else if(role === "admin") window.location.href = "admin.html";
+  else window.location.href = "login.html"; // fallback
 }
 
 // Form submission
